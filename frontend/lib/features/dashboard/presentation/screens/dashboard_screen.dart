@@ -29,7 +29,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.go('/profile-setup'),
+            onPressed: () => context.go('/profile'),
           )
         ],
       ),
@@ -133,37 +133,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Metric cards row
-                  Row(
+                  // Metric cards grid
+                  GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 14,
+                    mainAxisSpacing: 14,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    childAspectRatio: 1.5,
                     children: [
-                      Expanded(
-                        child: _buildMetricCard(
-                          title: 'Calories',
-                          value: '${liveCalories.toInt()}',
-                          unit: 'kcal',
-                          icon: Icons.local_fire_department,
-                          color: const Color(0xFFFF6B6B),
-                        ),
+                      _buildMetricCard(
+                        title: 'Burned',
+                        value: '${liveCalories.toInt()}',
+                        unit: 'kcal',
+                        icon: Icons.local_fire_department,
+                        color: const Color(0xFFFF6B6B),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _buildMetricCard(
-                          title: 'Distance',
-                          value: (liveSteps * 0.000762).toStringAsFixed(2),
-                          unit: 'km',
-                          icon: Icons.map_outlined,
-                          color: const Color(0xFF48CFAD),
-                        ),
+                      _buildMetricCard(
+                        title: 'Eaten',
+                        value: '${(profile.caloriesConsumed ?? 0).toInt()}',
+                        unit: 'kcal',
+                        icon: Icons.restaurant,
+                        color: Colors.orange,
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _buildMetricCard(
-                          title: 'Streak',
-                          value: '${profile.streakCount ?? 0}',
-                          unit: 'days',
-                          icon: Icons.bolt,
-                          color: const Color(0xFFFFD93D),
-                        ),
+                      _buildMetricCard(
+                        title: 'Distance',
+                        value: (liveSteps * 0.000762).toStringAsFixed(2),
+                        unit: 'km',
+                        icon: Icons.map_outlined,
+                        color: const Color(0xFF48CFAD),
+                      ),
+                      _buildMetricCard(
+                        title: 'Streak',
+                        value: '${profile.streakCount ?? 0}',
+                        unit: 'days',
+                        icon: Icons.bolt,
+                        color: const Color(0xFFFFD93D),
                       ),
                     ],
                   ),
@@ -203,6 +208,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           });
           return const Center(child: CircularProgressIndicator());
         },
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'search_food',
+            onPressed: () => context.push('/food-search'),
+            backgroundColor: const Color(0xFF48CFAD),
+            icon: const Icon(Icons.search, color: Colors.white),
+            label: const Text('Search Food', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton.extended(
+            heroTag: 'scan_food',
+            onPressed: () => context.push('/scanner'),
+            backgroundColor: const Color(0xFF6C63FF),
+            icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
+            label: const Text('Scan Food', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

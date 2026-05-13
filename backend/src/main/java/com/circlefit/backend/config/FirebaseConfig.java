@@ -23,7 +23,7 @@ public class FirebaseConfig {
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .setStorageBucket("circlefit-926d3.appspot.com") // Make sure to match your actual bucket URL
+                    .setStorageBucket("circlefit-926d3.firebasestorage.app") // Updated suffix
                     .build();
 
             if (FirebaseApp.getApps().isEmpty()) {

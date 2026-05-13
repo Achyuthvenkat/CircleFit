@@ -34,6 +34,7 @@ public class ProfileService {
         if (req.getGender() != null) user.setGender(req.getGender());
         if (req.getFitnessGoal() != null) user.setFitnessGoal(req.getFitnessGoal());
         if (req.getDailyCalorieGoal() != null) user.setDailyCalorieGoal(req.getDailyCalorieGoal());
+        if (req.getCaloriesConsumed() != null) user.setCaloriesConsumed(req.getCaloriesConsumed());
 
         userRepository.save(user);
         return mapToRes(user);

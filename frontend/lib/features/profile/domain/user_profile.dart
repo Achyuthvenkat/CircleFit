@@ -52,4 +52,6 @@ class UserProfile {
       streakCount: json['streakCount'],
     );
   }
+
+  bool get isComplete => name != null && name!.trim().isNotEmpty;
 }

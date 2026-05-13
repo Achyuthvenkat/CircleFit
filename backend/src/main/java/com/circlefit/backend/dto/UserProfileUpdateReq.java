@@ -11,4 +11,5 @@ public class UserProfileUpdateReq {
     private String gender;
     private String fitnessGoal;
     private Integer dailyCalorieGoal;
+    private Double caloriesConsumed;
 }

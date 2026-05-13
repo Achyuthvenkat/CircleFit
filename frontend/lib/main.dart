@@ -25,15 +25,17 @@ void main() async {
   runApp(const ProviderScope(child: CircleFitApp()));
 }
 
-class CircleFitApp extends StatelessWidget {
+class CircleFitApp extends ConsumerWidget {
   const CircleFitApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'CircleFit',
       theme: AppTheme.lightTheme,
-      routerConfig: AppRouter.router,
+      routerConfig: router,
       debugShowCheckedModeBanner: false,
     );
   }

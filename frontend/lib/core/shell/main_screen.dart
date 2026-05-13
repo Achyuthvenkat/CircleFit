@@ -7,7 +7,7 @@ class MainScreen extends StatelessWidget {
 
   int _locationToIndex(String location) {
     if (location.startsWith('/groups')) return 1;
-    if (location.startsWith('/profile-setup')) return 2;
+    if (location.startsWith('/profile')) return 2;
     return 0; // dashboard
   }
 
@@ -38,7 +38,7 @@ class MainScreen extends StatelessWidget {
                 context.go('/groups');
                 break;
               case 2:
-                context.go('/profile-setup');
+                context.go('/profile');
                 break;
             }
           },
