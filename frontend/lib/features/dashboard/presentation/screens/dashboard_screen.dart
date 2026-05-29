@@ -1,9 +1,14 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../tracking/presentation/providers/step_provider.dart';
+import '../../../tracking/data/step_repository.dart';
+import '../widgets/water_tracker_card.dart';
+import '../widgets/nutrition_balance_card.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -13,11 +18,67 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  int? _selectedBarIndex;
+  Timer? _foregroundSyncTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // 1. Immediately trigger an automatic sync when the app is opened
+    _triggerSync();
+
+    // 2. Set up a 1-minute periodic sync timer when the app is open (foreground)
+    _foregroundSyncTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _triggerSync();
+    });
+  }
+
+  @override
+  void dispose() {
+    _foregroundSyncTimer?.cancel();
+    super.dispose();
+  }
+
+  void _triggerSync() {
+    final service = FlutterBackgroundService();
+    service.invoke('syncSteps');
+  }
+
+  String _getWeekdayName(DateTime date) {
+    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return weekdays[date.weekday - 1];
+  }
+
+  List<DailyStepData> _getCompletedWeeklyData(List<DailyStepData> rawData) {
+    final today = DateTime.now();
+    final Map<String, DailyStepData> map = {
+      for (var d in rawData) d.date.toIso8601String().substring(0, 10): d
+    };
+
+    final List<DailyStepData> completed = [];
+    for (int i = 6; i >= 0; i--) {
+      final date = today.subtract(Duration(days: i));
+      final key = date.toIso8601String().substring(0, 10);
+      if (map.containsKey(key)) {
+        completed.add(map[key]!);
+      } else {
+        completed.add(DailyStepData(
+          date: date,
+          steps: 0,
+          calories: 0.0,
+          distance: 0.0,
+        ));
+      }
+    }
+    return completed;
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileProvider);
     final liveSteps = ref.watch(liveStepProvider);
     final liveCalories = ref.watch(liveCaloriesProvider);
+    final weeklyStepsAsync = ref.watch(weeklyStepsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
@@ -41,7 +102,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           final stepProgress = (liveSteps / stepGoal).clamp(0.0, 1.0);
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(profileProvider),
+            onRefresh: () async {
+              ref.invalidate(profileProvider);
+              ref.invalidate(weeklyStepsProvider);
+            },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(20.0),
@@ -133,6 +197,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   const SizedBox(height: 20),
 
+                  _buildWeeklyChartCard(weeklyStepsAsync, stepGoal),
+
+                  const SizedBox(height: 20),
+
+                  const WaterTrackerCard(),
+
+                  const SizedBox(height: 20),
+
+                  const NutritionBalanceCard(),
+
+                  const SizedBox(height: 20),
+
                   // Metric cards grid
                   GridView.count(
                     crossAxisCount: 2,
@@ -189,7 +265,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Step tracking is active · Syncs every 5 minutes',
+                            'Step tracking is active · Syncs every 1 minute while open',
                             style: TextStyle(color: Colors.green.shade700, fontSize: 13),
                           ),
                         ),
@@ -229,6 +305,193 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             label: const Text('Scan Food', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWeeklyChartCard(AsyncValue<List<DailyStepData>> weeklyStepsAsync, int stepGoal) {
+    return weeklyStepsAsync.when(
+      data: (rawData) {
+        final completedData = _getCompletedWeeklyData(rawData);
+        
+        // Calculate average steps
+        final totalSteps = completedData.map((d) => d.steps).fold(0, (a, b) => a + b);
+        final avgSteps = completedData.isEmpty ? 0 : (totalSteps / completedData.length).round();
+
+        // Find max steps to scale heights dynamically
+        final maxStepsInWeek = completedData.map((d) => d.steps).fold(1, (a, b) => a > b ? a : b);
+        final maxScale = math.max(maxStepsInWeek, stepGoal);
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.bar_chart_rounded, color: Color(0xFF6C63FF), size: 24),
+                      SizedBox(width: 8),
+                      Text(
+                        'Weekly Activity',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2D3142)),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'Daily Avg: $avgSteps steps',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF48CFAD)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Dynamic details overlay / tooltip
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F7FB),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    _selectedBarIndex != null
+                        ? '${_getWeekdayName(completedData[_selectedBarIndex!].date)}: ${completedData[_selectedBarIndex!].steps} steps'
+                        : 'Tap on any bar to see daily steps',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: _selectedBarIndex != null ? const Color(0xFF6C63FF) : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Chart column layout
+              SizedBox(
+                height: 140,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: List.generate(completedData.length, (index) {
+                    final dayData = completedData[index];
+                    final barHeightFactor = (dayData.steps / maxScale).clamp(0.01, 1.0);
+                    final isSelected = _selectedBarIndex == index;
+                    final reachedGoal = dayData.steps >= stepGoal;
+
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedBarIndex = isSelected ? null : index;
+                          });
+                        },
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                child: Stack(
+                                  alignment: Alignment.bottomCenter,
+                                  children: [
+                                    // Grey bar background track
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0EFFF),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    // Active colored bar filled up to the height factor
+                                    FractionallySizedBox(
+                                      heightFactor: barHeightFactor,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: isSelected
+                                                ? [const Color(0xFFFF8585), const Color(0xFFFFD93D)]
+                                                : reachedGoal
+                                                    ? [const Color(0xFF48CFAD), const Color(0xFF6C63FF)]
+                                                    : [const Color(0xFF8B85FF), const Color(0xFF6C63FF)],
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                          ),
+                                          borderRadius: BorderRadius.circular(8),
+                                          boxShadow: [
+                                            if (isSelected)
+                                              BoxShadow(
+                                                color: const Color(0xFFFF8585).withOpacity(0.4),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _getWeekdayName(dayData.date).substring(0, 3),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected ? const Color(0xFF6C63FF) : Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+        ),
+      ),
+      error: (err, stack) => Container(
+        height: 200,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Center(
+          child: Text(
+            'Failed to load weekly activity: $err',
+            style: const TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }

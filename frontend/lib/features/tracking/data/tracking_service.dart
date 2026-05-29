@@ -87,14 +87,13 @@ void onStart(ServiceInstance service) async {
     print('Could not start pedometer in background: $e');
   }
 
-  // ── Periodic HTTP sync every 5 minutes ───────────────────────────────────
-  Timer.periodic(const Duration(minutes: 5), (_) async {
-    if (currentTodaySteps == 0) return;
-
+  // ── Sync steps immediately on-demand (triggered by foreground app events) ──
+  service.on('syncSteps').listen((event) async {
     final token = prefs.getString('jwt_token');
     if (token == null) return;
-
-    await _syncToBackend(steps: currentTodaySteps, token: token);
+    if (currentTodaySteps > 0) {
+      await _syncToBackend(steps: currentTodaySteps, token: token);
+    }
   });
 }
 
@@ -115,7 +114,7 @@ Future<void> _syncToBackend({required int steps, required String token}) async {
 
     // Read base URL from shared prefs, or use default
     final prefs = await SharedPreferences.getInstance();
-    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.14:8081/api';
+    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.9:8081/api';
 
     final request = await client.postUrl(Uri.parse('$baseUrl/steps/sync'));
     request.headers.set('Content-Type', 'application/json');

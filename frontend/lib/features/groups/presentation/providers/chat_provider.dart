@@ -84,7 +84,7 @@ class ChatNotifier extends Notifier<Map<int, ChatState>> {
   Future<void> _connectStomp(int groupId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.14:8081/api';
+    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.9:8081/api';
     
     // Convert http(s) to ws(s)
     String wsUrl = baseUrl.startsWith('https') 

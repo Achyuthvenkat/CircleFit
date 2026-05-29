@@ -40,7 +40,16 @@ public class StepService {
             
             // Update User's today stats if date is today
             if (req.getDate().equals(LocalDate.now())) {
-                if (user.getTotalSteps() == null || req.getSteps() > user.getTotalSteps()) {
+                boolean isNewDay = user.getUpdatedAt() == null || 
+                                   !user.getUpdatedAt().toLocalDate().equals(LocalDate.now());
+                
+                if (isNewDay) {
+                    // It is a new day! Overwrite stats directly with the new day's initial values
+                    user.setTotalSteps(req.getSteps());
+                    user.setCaloriesBurned(req.getCalories());
+                    userRepository.save(user);
+                } else if (user.getTotalSteps() == null || req.getSteps() > user.getTotalSteps()) {
+                    // Same day, update only if steps are greater than currently saved
                     user.setTotalSteps(req.getSteps());
                     user.setCaloriesBurned(req.getCalories());
                     userRepository.save(user);

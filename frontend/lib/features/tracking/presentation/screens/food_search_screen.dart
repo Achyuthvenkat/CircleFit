@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
-import 'package:go_router/go_router.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
 class FoodSearchScreen extends ConsumerStatefulWidget {
@@ -253,7 +252,7 @@ class _ProductDetailsSheet extends ConsumerWidget {
     final success = await ref.read(profileProvider.notifier).updateProfile({'caloriesConsumed': newTotal});
 
     if (context.mounted) {
-      Navigator.pop(context); // pop loading
+      Navigator.of(context, rootNavigator: true).pop(); // pop loading
       Navigator.pop(context); // pop sheet
       
       if (success) {

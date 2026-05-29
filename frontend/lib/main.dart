@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:openfoodfacts/openfoodfacts.dart';
 import 'core/network/dio_client.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -10,6 +11,9 @@ import 'features/tracking/data/tracking_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  
+  // Configure Open Food Facts API User-Agent globally
+  OpenFoodAPIConfiguration.userAgent = UserAgent(name: 'CircleFit', url: 'https://circlefit.app');
   
   // Restore saved auth token so requests work after app restarts
   final prefs = await SharedPreferences.getInstance();

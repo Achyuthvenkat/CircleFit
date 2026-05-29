@@ -7,12 +7,8 @@ class ProfileRepository {
   final Dio _dio = DioClient.instance;
 
   Future<UserProfile> getProfile() async {
-    try {
-      final response = await _dio.get('/profile');
-      return UserProfile.fromJson(response.data);
-    } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Failed to load profile');
-    }
+    final response = await _dio.get('/profile');
+    return UserProfile.fromJson(response.data);
   }
 
   Future<UserProfile> updateProfile(Map<String, dynamic> data) async {

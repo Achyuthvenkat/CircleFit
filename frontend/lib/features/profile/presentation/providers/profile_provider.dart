@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/profile_repository.dart';
 import '../../domain/user_profile.dart';
@@ -17,12 +18,16 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
   FutureOr<UserProfile?> build() async {
     try {
       return await ref.read(profileRepositoryProvider).getProfile();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('jwt_token');
+        DioClient.clearAuthToken();
+        throw Exception('Session expired. Please log in again.');
+      }
+      throw Exception(e.response?.data['message'] ?? 'Failed to load profile. Please check your network connection.');
     } catch (e) {
-      // If we get a 401/403 or "user not found", clear the stale token
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('jwt_token');
-      DioClient.clearAuthToken();
-      throw Exception('Session expired. Please log in again.');
+      throw Exception('An unexpected error occurred: $e');
     }
   }
 

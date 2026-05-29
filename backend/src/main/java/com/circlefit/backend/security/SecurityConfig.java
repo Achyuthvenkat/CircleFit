@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .cors(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> 
-                        auth.requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/ws-chat/**").permitAll()
+                        auth.requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/ws-chat/**", "/uploads/**").permitAll()
                                 .anyRequest().authenticated()
                 );
 

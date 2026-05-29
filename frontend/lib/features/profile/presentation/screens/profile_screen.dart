@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/profile_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../tracking/presentation/providers/step_provider.dart';
+import '../../../tracking/presentation/providers/water_provider.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -45,7 +47,7 @@ class ProfileScreen extends ConsumerWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const SizedBox(height: 40),
-                          _buildProfileImage(ref, profile.profilePicture),
+                          _buildProfileImage(context, ref, profile.profilePicture),
                           const SizedBox(height: 16),
                           Text(
                             profile.name ?? profile.username,
@@ -126,7 +128,7 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileImage(WidgetRef ref, String? imageUrl) {
+  Widget _buildProfileImage(BuildContext context, WidgetRef ref, String? imageUrl) {
     return Stack(
       children: [
         Container(
@@ -160,8 +162,48 @@ class ProfileScreen extends ConsumerWidget {
             onTap: () async {
               final picker = ImagePicker();
               final image = await picker.pickImage(source: ImageSource.gallery);
-              if (image != null) {
-                ref.read(profileProvider.notifier).uploadImage(File(image.path));
+              if (image != null && context.mounted) {
+                // Show loading indicator dialog
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: Color(0xFF6C63FF)),
+                            SizedBox(height: 16),
+                            Text('Uploading profile picture...'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+
+                final success = await ref.read(profileProvider.notifier).uploadImage(File(image.path));
+
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pop(); // Close loading indicator
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile picture updated successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to update profile picture. Please check network/server logs.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               }
             },
             child: Container(
@@ -303,6 +345,13 @@ class ProfileScreen extends ConsumerWidget {
       child: OutlinedButton(
         onPressed: () async {
           await ref.read(authRepositoryProvider).logout();
+          
+          // Invalidate previous cached user data to force a fresh fetch on next login
+          ref.invalidate(profileProvider);
+          ref.invalidate(weeklyStepsProvider);
+          ref.invalidate(liveStepProvider);
+          ref.invalidate(waterIntakeProvider);
+
           if (context.mounted) {
             context.go('/login');
           }

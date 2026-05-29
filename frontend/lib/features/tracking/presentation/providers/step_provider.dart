@@ -61,3 +61,8 @@ class LiveStepNotifier extends Notifier<int> {
     });
   }
 }
+
+final weeklyStepsProvider = FutureProvider<List<DailyStepData>>((ref) async {
+  final repo = ref.watch(stepRepositoryProvider);
+  return repo.getWeeklySteps();
+});

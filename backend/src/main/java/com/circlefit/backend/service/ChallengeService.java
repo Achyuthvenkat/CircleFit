@@ -19,6 +19,7 @@ public class ChallengeService {
     private final ChallengeParticipantRepository participantRepository;
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
+    private final DailyStepRepository dailyStepRepository;
 
     @Transactional
     public ChallengeRes createChallenge(String username, CreateChallengeReq req) {
@@ -78,9 +79,21 @@ public class ChallengeService {
 
         return participants.stream().map(p -> {
             User u = p.getUser();
-            int progress = challenge.getType() == Challenge.Type.STEPS
-                    ? (u.getTotalSteps() != null ? u.getTotalSteps() : 0)
-                    : (u.getCaloriesBurned() != null ? u.getCaloriesBurned().intValue() : 0);
+            
+            // Query and sum daily steps/calories over the active challenge duration
+            List<DailyStep> dailySteps = dailyStepRepository.findByUserIdAndDateBetweenOrderByDateAsc(
+                    u.getId(), challenge.getStartDate(), challenge.getEndDate());
+            
+            int progress = 0;
+            if (challenge.getType() == Challenge.Type.STEPS) {
+                progress = dailySteps.stream()
+                        .mapToInt(ds -> ds.getSteps() != null ? ds.getSteps() : 0)
+                        .sum();
+            } else {
+                progress = (int) dailySteps.stream()
+                        .mapToDouble(ds -> ds.getCalories() != null ? ds.getCalories() : 0.0)
+                        .sum();
+            }
 
             double pct = challenge.getTargetValue() > 0
                     ? Math.min(100.0, (progress * 100.0) / challenge.getTargetValue())

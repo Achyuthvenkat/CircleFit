@@ -41,4 +41,40 @@ class StepRepository {
       print('Step sync failed: ${e.response?.statusCode} ${e.message}');
     }
   }
+  Future<List<DailyStepData>> getWeeklySteps() async {
+    try {
+      final response = await _dio.get('/steps/weekly');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => DailyStepData.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load weekly steps');
+      }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Failed to fetch weekly step statistics');
+    }
+  }
+}
+
+class DailyStepData {
+  final DateTime date;
+  final int steps;
+  final double calories;
+  final double distance;
+
+  DailyStepData({
+    required this.date,
+    required this.steps,
+    required this.calories,
+    required this.distance,
+  });
+
+  factory DailyStepData.fromJson(Map<String, dynamic> json) {
+    return DailyStepData(
+      date: DateTime.parse(json['date']),
+      steps: json['steps'] as int? ?? 0,
+      calories: (json['calories'] as num?)?.toDouble() ?? 0.0,
+      distance: (json['distance'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
 }

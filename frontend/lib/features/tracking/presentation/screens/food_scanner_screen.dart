@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:openfoodfacts/openfoodfacts.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
-import 'package:go_router/go_router.dart';
 
 class FoodScannerScreen extends ConsumerStatefulWidget {
   const FoodScannerScreen({super.key});
@@ -209,7 +208,7 @@ class _FoodScannerScreenState extends ConsumerState<FoodScannerScreen> {
     });
 
     if (mounted) {
-      Navigator.pop(context); // close dialog
+      Navigator.of(context, rootNavigator: true).pop(); // close dialog
       Navigator.pop(context); // close bottom sheet
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(

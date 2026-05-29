@@ -89,6 +89,7 @@ class ChallengesNotifier extends AsyncNotifier<void> {
   Future<void> joinChallenge(int challengeId, int groupId) async {
     await ref.read(groupRepositoryProvider).joinChallenge(challengeId);
     ref.invalidate(challengesProvider(groupId));
+    ref.invalidate(challengeProgressProvider(challengeId));
   }
 }
 
