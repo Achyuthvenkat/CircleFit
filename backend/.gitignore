@@ -39,3 +39,6 @@ out/
 .env
 firebase-admin.json
 
+# Local uploads folder for user-uploaded files (profile pics, etc.)
+/uploads/
+*.log

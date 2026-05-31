@@ -45,4 +45,15 @@ app.*.map.json
 /android/app/release
 
 google-services.json
+*.json
+
+# Environment variables and private local keys
+.env
+.env.*
+local.properties
+key.properties
+*.keystore
+*.jks
+*.log
+
 
