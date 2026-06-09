@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,7 +11,10 @@ import 'features/tracking/data/tracking_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+  }
   
   // Configure Open Food Facts API User-Agent globally
   OpenFoodAPIConfiguration.userAgent = UserAgent(name: 'CircleFit', url: 'https://circlefit.app');
@@ -22,10 +26,12 @@ void main() async {
     DioClient.setAuthToken(savedToken);
   }
 
-  // Save the API base URL so the background isolate can read it for HTTP sync
-  await TrackingService.saveApiBaseUrl(DioClient.baseUrl);
-
-  await TrackingService.initializeService();
+  if (!kIsWeb) {
+    // Save the API base URL so the background isolate can read it for HTTP sync
+    await TrackingService.saveApiBaseUrl(DioClient.baseUrl);
+    await TrackingService.initializeService();
+  }
+  
   runApp(const ProviderScope(child: CircleFitApp()));
 }
 

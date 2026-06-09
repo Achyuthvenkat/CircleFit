@@ -1,8 +1,8 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/profile_repository.dart';
 import '../../domain/user_profile.dart';
@@ -42,7 +42,7 @@ class ProfileNotifier extends AsyncNotifier<UserProfile?> {
     }
   }
 
-  Future<bool> uploadImage(File file) async {
+  Future<bool> uploadImage(XFile file) async {
     try {
       final updatedProfile = await ref.read(profileRepositoryProvider).uploadProfileImage(file);
       state = AsyncData(updatedProfile);

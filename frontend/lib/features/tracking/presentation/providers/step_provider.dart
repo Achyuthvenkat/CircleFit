@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/step_repository.dart';
@@ -47,6 +48,9 @@ class LiveStepNotifier extends Notifier<int> {
       }
     }
     // If it's a new day, state stays 0 (correct — new day, fresh count)
+
+    // On Web, there is no background step service.
+    if (kIsWeb) return;
 
     // ── Step 2: Listen to live updates forwarded from the background service
     // The background service owns the pedometer stream AND the 5-minute sync timer.

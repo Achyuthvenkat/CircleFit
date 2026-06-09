@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:dio/dio.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/user_profile.dart';
@@ -20,11 +21,17 @@ class ProfileRepository {
     }
   }
 
-  Future<UserProfile> uploadProfileImage(File file) async {
+  Future<UserProfile> uploadProfileImage(XFile file) async {
     try {
-      String fileName = file.path.split('/').last;
+      final MultipartFile multipartFile;
+      if (kIsWeb) {
+        final bytes = await file.readAsBytes();
+        multipartFile = MultipartFile.fromBytes(bytes, filename: file.name);
+      } else {
+        multipartFile = await MultipartFile.fromFile(file.path, filename: file.name);
+      }
       FormData formData = FormData.fromMap({
-        "file": await MultipartFile.fromFile(file.path, filename: fileName),
+        "file": multipartFile,
       });
       final response = await _dio.post('/profile/image', data: formData);
       return UserProfile.fromJson(response.data);

@@ -5,7 +5,6 @@ import '../providers/profile_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../tracking/presentation/providers/step_provider.dart';
 import '../../../tracking/presentation/providers/water_provider.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -184,7 +183,7 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 );
 
-                final success = await ref.read(profileProvider.notifier).uploadImage(File(image.path));
+                final success = await ref.read(profileProvider.notifier).uploadImage(image);
 
                 if (context.mounted) {
                   Navigator.of(context, rootNavigator: true).pop(); // Close loading indicator

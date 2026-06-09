@@ -114,7 +114,8 @@ Future<void> _syncToBackend({required int steps, required String token}) async {
 
     // Read base URL from shared prefs, or use default
     final prefs = await SharedPreferences.getInstance();
-    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.5:8081/api';
+    // final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.5:8081/api';
+    final baseUrl = prefs.getString('api_base_url') ?? 'http://172.20.10.2:8081/api';
 
     final request = await client.postUrl(Uri.parse('$baseUrl/steps/sync'));
     request.headers.set('Content-Type', 'application/json');
